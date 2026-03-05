@@ -1,10 +1,10 @@
 const express = require('express');
 const fs = require('fs');
-
 const app = express();
+const path = require('path');
 
 app.use(express.json());
-app.use(express.static('public-testing'));
+app.use(express.static(path.join(__dirname, 'public-testing')));
 
 app.get('/todos', (req,res) => {
     const data =fs.readFileSync('data.json');
