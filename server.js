@@ -4,7 +4,7 @@ const fs = require('fs');
 const app = express();
 
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public-testing'));
 
 app.get('/todos', (req,res) => {
     const data =fs.readFileSync('data.json');
