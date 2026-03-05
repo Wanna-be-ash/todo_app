@@ -6,6 +6,11 @@ const path = require('path');
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public-testing')));
 
+app.get("/debug-files", (req, res) => {
+  const files = fs.readdirSync(path.join(__dirname, 'public-testing'));
+  res.json(files);
+});
+
 app.get('/todos', (req,res) => {
     const data =fs.readFileSync('data.json');
     const todos = JSON.parse(data);
