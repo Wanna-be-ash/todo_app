@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Todo App</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 6px 10px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    li {
+      margin: 10px 0;
+      list-style: none;
+    }
+
+    span {
+      margin-left: 10px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Todo App</h1>
+
+<input id="todoInput" placeholder="New todo">
+<button onclick="addTodo()">Add</button>
+
+<ul id="todoList"></ul>
+
+<script>
+
+async function loadTodos() {
+
+  const res = await fetch('/todos');
+  const todos = await res.json();
+
+  const list = document.getElementById('todoList');
+  list.innerHTML = '';
+
+  todos.forEach(todo => {
+
+    const li = document.createElement('li');
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = todo.completed;
+
+    checkbox.onchange = () => toggleTodo(todo);
+
+    const text = document.createElement('span');
+    text.textContent = todo.title;
+
+    if (todo.completed) {
+      text.style.textDecoration = 'line-through';
+    }
+
+    const del = document.createElement('button');
+    del.textContent = 'Delete';
+    del.onclick = () => deleteTodo(todo.id);
+
+    li.appendChild(checkbox);
+    li.appendChild(text);
+    li.appendChild(del);
+
+    list.appendChild(li);
+
+  });
+
+}
+
+
+
+async function addTodo() {
+
+  const input = document.getElementById('todoInput');
+
+  if (!input.value.trim()) return;
+
+  await fetch('/todos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: input.value
+    })
+  });
+
+  input.value = '';
+
+  loadTodos();
+
+}
+
+
+
+async function deleteTodo(id) {
+
+  await fetch('/todos/' + id, {
+    method: 'DELETE'
+  });
+
+  loadTodos();
+
+}
+
+
+
+async function toggleTodo(todo) {
+
+  await fetch('/todos/' + todo.id, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      completed: !todo.completed
+    })
+  });
+
+  loadTodos();
+
+}
+
+
+loadTodos();
+
+</script>
+
+</body>
+</html>
