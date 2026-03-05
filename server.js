@@ -6,10 +6,6 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-app.get ('/', (req,res) => {
-    res.send("hi MFFF!");
-});
-
 app.get('/todos', (req,res) => {
     const data =fs.readFileSync('data.json');
     const todos = JSON.parse(data);
