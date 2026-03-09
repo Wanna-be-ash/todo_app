@@ -1,26 +1,42 @@
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs').promises;
 const app = express();
 const path = require('path');
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public-testing')));
 
-app.get("/debug-files", (req, res) => {
-  const files = fs.readdirSync(path.join(__dirname, 'public-testing'));
+const DATA_FILE = path.join(__dirname, 'data.json');
+
+async function readTodos() {
+  try {
+    const data = await fs.readFile(DATA_FILE);
+    return JSON.parse(data);
+  } catch (err) {
+    return [];
+  }
+};
+
+async function writeTodos(todos) {
+  try {
+    await fs.writeFile(DATA_FILE, JSON.stringify(todos, null, 2));
+  } catch (err) {
+    console.error("Error writing todos:", err);
+  }
+};
+
+app.get("/debug-files", async (req, res) => {
+  const files = await fs.readdir(path.join(__dirname, 'public-testing'));
   res.json(files);
 });
 
-app.get('/todos', (req,res) => {
-    const data =fs.readFileSync('data.json');
-    const todos = JSON.parse(data);
-
+app.get('/todos', async (req,res) => {
+    const todos = await readTodos();
     res.json(todos);
-})
+});
 
-app.get('/todos/:id', (req,res) => {
-    const data = fs.readFileSync('data.json');
-    const todos = JSON.parse(data);
+app.get('/todos/:id', async (req,res) => {
+    const todos = await readTodos();
 
     const id = Number(req.params.id);
 
@@ -37,26 +53,28 @@ app.get('/todos/:id', (req,res) => {
     res.json(todo);
 });
 
-app.post('/todos', (req,res) => {
-    const data = fs.readFileSync('data.json');
-        const todos = JSON.parse(data);
+app.post('/todos', async (req,res) => {
+    const todos = await readTodos();
+
+    if (!req.body.title || typeof req.body.title !== "string" || !req.body.title.trim()) {
+  return res.status(400).json({ error: "title must be a non-empty string" });
+};
         
         const newTodo = {
-            id: todos.length + 1,
+            id: todos.length ? Math.max(...todos.map(t => t.id)) + 1 : 1,
             title: req.body.title,
             completed: false
         };
 
         todos.push(newTodo);
 
-        fs.writeFileSync('data.json', JSON.stringify(todos));
+        await writeTodos(todos);
 
-        res.json (newTodo);
+        res.status(201).json(newTodo);
 });
 
-app.put('/todos/:id', (req,res) => {
-    const data = fs.readFileSync('data.json');
-    const todos = JSON.parse(data);
+app.put('/todos/:id', async (req,res) => {
+    const todos = await readTodos();
 
     const id = Number(req.params.id);
 
@@ -77,15 +95,13 @@ app.put('/todos/:id', (req,res) => {
         todo.completed = req.body.completed;
     }
 
-    fs.writeFileSync('data.json', JSON.stringify(todos, null, 2));
+    await writeTodos(todos);
 
     res.json(todo);
 });
 
-app.delete('/todos/:id', (req,res) => {
-    const data = fs.readFileSync('data.json');
-    const todos = JSON.parse(data);
-
+app.delete('/todos/:id', async (req,res) => {
+    const todos = await readTodos();
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
@@ -98,9 +114,9 @@ app.delete('/todos/:id', (req,res) => {
         return res.status(404).json({ error: "not found"});
     }
 
-    fs.writeFileSync('data.json', JSON.stringify(updatedTodos, null, 2));
+    await writeTodos(updatedTodos);
 
-    res.json({ message: "done broski, deleted"});
+    res.status(200).json({ message: "Todo deleted" });
 })
 
 
